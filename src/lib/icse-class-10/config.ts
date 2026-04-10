@@ -1,0 +1,45 @@
+// ICSE Class 10 Configuration
+// Generated from top_200_exam_universe_seed.csv
+
+export const EXAM_CONFIG = {
+  examId: "EXAM065",
+  slug: "icse-class-10",
+  name: "ICSE Class 10",
+  fullName: "ICSE",
+  alias: "ICSE",
+  family: "CISCE",
+  category: "School exams",
+  subcategory: "Secondary leaving",
+  country: "India",
+  region: "South Asia",
+  languages: ["English"],
+  estimatedAnnualTakers: "varies",
+  testingWindow: "Feb-Mar",
+  schedulePattern: "Annual",
+  ageGroup: "14-16",
+  targetUser: "School student",
+  delivery: "Paper-based",
+  questionTypes: ["Subjective + objective mix"],
+  adaptivity: "Linear",
+  sections: "Subject exams",
+  scoringMode: "Grades",
+  essayOrSpeaking: "Writing",
+  ipRisk: "Low",
+  contentReuse: "school_subjects",
+  uiEngine: "paper_subjective_objective",
+  monetizationPotential: "High",
+  tier: "Tier 3",
+  launchWave: "Wave 5",
+  themeColor: "#D97706",
+  themeColorDark: "#B45309",
+  localizationComplexity: "Medium",
+  offlineNeeded: true,
+  mobileFirst: true,
+  locale: "en",
+  isRTL: false,
+  freemiumGate: {
+    dailyQuestions: 10,
+  },
+} as const;
+
+export type ExamConfig = typeof EXAM_CONFIG;

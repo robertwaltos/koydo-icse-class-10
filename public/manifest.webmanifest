@@ -1,0 +1,26 @@
+{
+  "name": "Koydo ICSE Class 10 — Exam Prep",
+  "short_name": "Koydo ICSE Class 10",
+  "description": "ICSE Class 10 exam preparation with AI-powered study tools",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#D97706",
+  "background_color": "#D97706",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

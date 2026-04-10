@@ -1,0 +1,5 @@
+Initial release of Koydo ICSE Class 10 Prep.
+
+• Practice questions
+• Score tracking
+• AI tutor integration
