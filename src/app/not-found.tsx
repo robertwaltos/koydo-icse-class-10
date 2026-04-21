@@ -1,14 +1,17 @@
 import Link from "next/link";
+import { EXAM_CONFIG } from "@/lib/act/config";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="text-center space-y-6">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Page Not Found</h1>
-        <p className="text-zinc-500 dark:text-zinc-400 max-w-md">The page you are looking for does not exist or has been moved.</p>
-        <Link href="/" className="inline-flex items-center justify-center rounded-lg bg-zinc-900 px-6 py-3 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-          Back to Home
-        </Link>
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
+      <span className="mb-4 text-7xl">🗺️</span>
+      <h1 className="mb-2 text-3xl font-bold">404 — Page not found</h1>
+      <p className="mb-8 max-w-md text-[var(--muted)]">
+        This page doesn&apos;t exist in {EXAM_CONFIG.name}. Let&apos;s get you back on track.
+      </p>
+      <div className="flex flex-wrap gap-3 justify-center">
+        <Link href="/learn" className="koydo-btn-primary px-6 py-2.5">Go to Study Hub</Link>
+        <Link href="/" className="koydo-btn-ghost px-6 py-2.5">Home</Link>
       </div>
     </div>
   );

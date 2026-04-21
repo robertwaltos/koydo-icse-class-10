@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { EXAM_CONFIG } from "@/lib/act/config";
 
-const EXAM_ID = "icse-class-10";
 const FREE_DAILY_LIMIT = 10;
 
 export async function GET(request: NextRequest) {
@@ -12,10 +12,15 @@ export async function GET(request: NextRequest) {
   const domain = searchParams.get("domain");
   const limit = Math.min(Number(searchParams.get("limit") ?? "20"), 50);
 
+  // Resolve exam UUID — exam_id in testing_question_bank is a UUID FK, not the slug
+  const { data: exam } = await supabase.from("testing_exams")
+    .select("id").eq("exam_code", EXAM_CONFIG.slug).maybeSingle();
+  if (!exam) return NextResponse.json({ examCode: EXAM_CONFIG.slug, questions: [] });
+
   let query = supabase
     .from("testing_question_bank")
     .select("id, question_text, question_type, difficulty, domain, options, correct_answer, explanation")
-    .eq("exam_id", EXAM_ID)
+    .eq("exam_id", exam.id)
     .limit(limit);
 
   if (domain) query = query.eq("domain", domain);
@@ -24,7 +29,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.json(
-      { examId: EXAM_ID, questions: [], error: error.message },
+      { examCode: EXAM_CONFIG.slug, questions: [], error: error.message },
       { status: 500 },
     );
   }
@@ -41,7 +46,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (sub) {
-      remaining = -1; // unlimited
+      remaining = -1;
     } else {
       const today = new Date().toISOString().slice(0, 10);
       const { count } = await supabase
@@ -54,7 +59,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    examId: EXAM_ID,
+    examCode: EXAM_CONFIG.slug,
     questions: questions ?? [],
     dailyLimit: FREE_DAILY_LIMIT,
     remaining,
