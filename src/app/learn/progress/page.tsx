@@ -6,6 +6,7 @@ import { CONTENT_MANIFEST } from "@/lib/act/content/manifest";
 import { PerformanceInsights } from "@/components/learn/PerformanceInsights";
 import { ScorePredictor } from "@/components/learn/ScorePredictor";
 import { WeakAreasDrill } from "@/components/learn/WeakAreasDrill";
+import { ScoreTrend } from "@/components/learn/ScoreTrend";
 
 export const metadata: Metadata = { title: `Progress — ${EXAM_CONFIG.name}` };
 
@@ -55,6 +56,9 @@ export default async function ProgressPage() {
       <Link href="/learn" className="mb-6 inline-flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--foreground)]">← Study Hub</Link>
       <h1 className="text-2xl font-bold mb-2">My Progress</h1>
       <p className="text-sm text-[var(--muted)] mb-8">Performance across all {EXAM_CONFIG.name} subjects.</p>
+
+      {/* Score trend — server-rendered sparkline */}
+      <ScoreTrend attempts={attempts ?? []} />
 
       {/* Score predictor — server-rendered from attempt history */}
       <ScorePredictor domainStats={domainStats} />

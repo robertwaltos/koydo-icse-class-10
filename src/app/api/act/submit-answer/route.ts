@@ -2,6 +2,12 @@ import { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EXAM_CONFIG } from "@/lib/act/config";
 
+async function md5(text: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest("MD5", encoder.encode(text));
+  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,13 +19,23 @@ export async function POST(req: NextRequest) {
 
   const [{ data: question }, { data: exam }] = await Promise.all([
     supabase.from("testing_question_bank")
-      .select("correct_option_index, explanation").eq("id", question_id).single(),
+      .select("options, correct_answer_hash, explanation").eq("id", question_id).single(),
     supabase.from("testing_exams").select("id").eq("exam_code", EXAM_CONFIG.slug).maybeSingle(),
   ]);
 
   if (!question) return Response.json({ error: "Question not found" }, { status: 404 });
 
-  const isCorrect = selected_option === question.correct_option_index;
+  // Resolve correct_option_index via MD5 hash matching
+  const options = (question.options as string[]) ?? [];
+  let correct_option_index = 0;
+  for (let i = 0; i < options.length; i++) {
+    if (await md5(options[i]) === question.correct_answer_hash) {
+      correct_option_index = i;
+      break;
+    }
+  }
+
+  const isCorrect = selected_option === correct_option_index;
 
   if (attempt_id) {
     await supabase.from("testing_attempt_answers").insert({
@@ -37,5 +53,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return Response.json({ correct: isCorrect, correct_option: question.correct_option_index, explanation: question.explanation });
+  return Response.json({ correct: isCorrect, correct_option: correct_option_index, explanation: question.explanation });
 }
