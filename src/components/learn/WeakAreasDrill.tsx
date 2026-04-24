@@ -25,7 +25,7 @@ export function WeakAreasDrill({ weakDomains, examSlug }: Props) {
     setLoading(true);
     try {
       const res = await fetch(`/api/act/questions?domain=${encodeURIComponent(domain)}&difficulty=easy&limit=10`);
-      const { questions } = await res.json() as { questions: Question[] };
+      const { questions } = await res.json() as { questions: QuizQuestion[] };
       if (!questions?.length) return;
       setDrill({
         questions,

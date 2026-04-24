@@ -21,6 +21,7 @@ export interface TopicManifest {
   icon: string;
   color: string;
   questionTarget: number;
+  minQuestionCount: number;
   activityTypes: ActivityType[];
 }
 
@@ -45,6 +46,7 @@ export const CONTENT_MANIFEST: ContentManifest = {
     icon: "🔢",
     color: "#1E40AF",
     questionTarget: 800,
+    minQuestionCount: 800,
     activityTypes: ["multiple_choice", "whiteboard", "numeric_input"],
   },
   {
@@ -54,6 +56,7 @@ export const CONTENT_MANIFEST: ContentManifest = {
     icon: "🔬",
     color: "#059669",
     questionTarget: 700,
+    minQuestionCount: 700,
     activityTypes: ["multiple_choice", "reading_passage"],
   },
   {
@@ -63,6 +66,7 @@ export const CONTENT_MANIFEST: ContentManifest = {
     icon: "📖",
     color: "#D97706",
     questionTarget: 600,
+    minQuestionCount: 600,
     activityTypes: ["multiple_choice", "essay", "cloze_deletion"],
   },
   {
@@ -72,7 +76,9 @@ export const CONTENT_MANIFEST: ContentManifest = {
     icon: "🌍",
     color: "#DC2626",
     questionTarget: 500,
+    minQuestionCount: 500,
     activityTypes: ["multiple_choice"],
   }
   ],
 };
+

@@ -1,15 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { EXAM_CONFIG } from "@/lib/act/config";
 
-const client = new Anthropic();
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
-// Essay prompts for each domain — should be extended per exam config
+type AnthropicMessageResponse = {
+  content?: Array<{
+    type: string;
+    text?: string;
+  }>;
+};
+
+async function generateEssayEvaluation(systemPrompt: string, essayPrompt: string, essay: string) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY is not configured");
+  }
+
+  const response = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [
+        {
+          role: "user",
+          content: `PROMPT: ${essayPrompt}
+
+ESSAY:
+${essay}`,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Anthropic request failed with status ${response.status}`);
+  }
+
+  const body = (await response.json()) as AnthropicMessageResponse;
+  const raw = body.content?.find((entry) => entry.type === "text")?.text;
+
+  if (!raw) {
+    throw new Error("Anthropic response did not include text content");
+  }
+
+  return raw;
+}
+
 const SAMPLE_PROMPTS: Record<string, string> = {
-  "English":
+  English:
     "Write a persuasive essay arguing whether social media has been a net positive or negative for society. Use specific examples and reasoning to support your position.",
-  "Writing":
+  Writing:
     "Some people believe that technology has made modern life better. Others disagree. Write an essay that presents both perspectives and gives your own view.",
   default:
     "Write an argumentative essay on a topic of your choice. Your essay should have a clear thesis, supporting arguments, and a conclusion.",
@@ -17,20 +66,31 @@ const SAMPLE_PROMPTS: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Premium gate — essay judging is a premium feature
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { data: entitlement } = await supabase
-    .from("microapp_user_entitlements").select("status")
-    .eq("user_id", user.id).eq("app_id", `koydo_${EXAM_CONFIG.slug}`).maybeSingle();
+    .from("microapp_user_entitlements")
+    .select("status")
+    .eq("user_id", user.id)
+    .eq("app_id", `koydo_${EXAM_CONFIG.slug}`)
+    .maybeSingle();
+
   const isPremium = (entitlement as { status: string } | null)?.status === "active";
+
   if (!isPremium) {
     return NextResponse.json({ error: "premium_required" }, { status: 403 });
   }
 
-  const { essay, prompt, domain } = await req.json() as {
-    essay: string; prompt?: string; domain?: string;
+  const { essay, prompt, domain } = (await req.json()) as {
+    essay: string;
+    prompt?: string;
+    domain?: string;
   };
 
   if (!essay || essay.trim().length < 50) {
@@ -58,22 +118,9 @@ Return your evaluation as valid JSON with this exact structure:
 
 Be honest and constructive. Score fairly — most student essays fall between 2-4 on each dimension.`;
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 1024,
-    system: systemPrompt,
-    messages: [
-      {
-        role: "user",
-        content: `PROMPT: ${essayPrompt}\n\nESSAY:\n${essay}`,
-      },
-    ],
-  });
-
-  const raw = (message.content[0] as { text: string }).text;
-
-  // Extract JSON from response
+  const raw = await generateEssayEvaluation(systemPrompt, essayPrompt, essay);
   const jsonMatch = raw.match(/\{[\s\S]*\}/);
+
   if (!jsonMatch) {
     return NextResponse.json({ error: "Failed to parse evaluation" }, { status: 500 });
   }
@@ -86,16 +133,19 @@ Be honest and constructive. Score fairly — most student essays fall between 2-
     model_paragraph: string;
   };
 
-  // Store the evaluation
-  await supabase.from("essay_submissions").insert({
+  const { error: insertError } = await supabase.from("essay_submissions").insert({
     user_id: user.id,
     exam_id: EXAM_CONFIG.slug,
     domain: domain ?? "Writing",
     prompt: essayPrompt,
     essay_text: essay,
-    evaluation: evaluation,
+    evaluation,
     composite_score: evaluation.composite,
-  }).catch(() => null); // Non-blocking — table may not exist in all envs
+  });
+
+  if (insertError) {
+    console.warn("Unable to persist essay submission", insertError.message);
+  }
 
   return NextResponse.json({ evaluation, prompt: essayPrompt });
 }
